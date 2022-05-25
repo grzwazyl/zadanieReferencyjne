@@ -16,4 +16,4 @@ Nowa rezerwacja
 
 Zmiana rezerwacji 
 
-> curl -d @post.json -H "Content-Type: application/json" -X PUT http://localhost:8080/rezerwacje/1
+> curl -d @put.json -H "Content-Type: application/json" -X PUT http://localhost:8080/rezerwacje/1
