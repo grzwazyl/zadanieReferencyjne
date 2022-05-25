@@ -19,6 +19,7 @@ public class RezerwacjaController {
     }
 
 
+
     @GetMapping("/rezerwacje")
     public ResponseEntity<List<RezerwacjaGetDto>> listaRezerwacji() {
 
@@ -43,15 +44,14 @@ public class RezerwacjaController {
     @PostMapping("/rezerwacje")
     public ResponseEntity dodajRezerwacje(@RequestBody RezerwacjaPostDto rezerwacja) {
 
-        System.out.println(rezerwacja);
         rezerwacjaService.dodajRezerwacje(rezerwacja);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/rezerwacje/{id}")
     public ResponseEntity zmienRezerwacje(@RequestBody RezerwacjaPostDto rezerwacja, @PathVariable("id") int id){
-        rezerwacjaService.zmienRezerwacje(rezerwacja, id);
 
+        rezerwacjaService.zmienRezerwacje(rezerwacja, id);
         return ResponseEntity.noContent().build();
     }
 

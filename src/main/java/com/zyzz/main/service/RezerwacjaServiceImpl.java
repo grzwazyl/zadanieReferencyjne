@@ -13,6 +13,8 @@ import com.zyzz.main.model.entity.Rezerwacja;
 import com.zyzz.main.model.entity.Wynajmujacy;
 import com.zyzz.main.model.entity.dto.RezerwacjaGetDto;
 import com.zyzz.main.model.entity.dto.RezerwacjaPostDto;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,9 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
         this.wynajmujacyDao = wynajmujacyDao;
     }
 
+    /**
+     * Zwraca listę wszystkich rezerwacji
+     */
     @Override
     public List<RezerwacjaGetDto> listaRezerwacji() {
 
@@ -48,9 +53,14 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
         return list;
     }
 
+    /**
+     * Zwraca listę rezerwacji dla danego najemcy
+     * @param nazwa nazwa najemcy
+     */
     @Override
     public List<RezerwacjaGetDto> listaRezerwacjiDlaNajemcy(String nazwa) {
-        Najemca najemca = najemcaDao.findByName(nazwa);
+        Najemca najemca = najemcaDao.findByName(nazwa)
+                .orElseThrow(() -> new RuntimeException("Najemca o podanej nazwie "+ nazwa + " nie istnieje"));
 
         List<RezerwacjaGetDto> list = rezerwacjaDao.listaDlaNajemcy(najemca).stream()
                 .map(rezerwacja -> rezerwacjaMapper.rezerwacjaToRezerwacjaGetDto(rezerwacja))
@@ -59,10 +69,17 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
         return list;
     }
 
+    /**
+     * Zwraca listę rezeracji dla danego obiektu
+     * @param id obiektu
+     */
     @Override
     public List<RezerwacjaGetDto> listaRezerwacjiDlaObiektu(int id) {
-        Obiekt obiekt = obiektDao.getById(id);
-        System.out.println(obiekt);
+
+        Obiekt obiekt = obiektDao.findById(id)
+                .orElseThrow(() -> new RuntimeException("Obiekt o danym id: "+ id +" nie istnieje"));
+
+
 
         List<RezerwacjaGetDto> list = rezerwacjaDao.listaDlaObiektu(obiekt).stream()
                 .map(rezerwacja -> rezerwacjaMapper.rezerwacjaToRezerwacjaGetDto(rezerwacja))
@@ -71,8 +88,12 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
         return list;
     }
 
+    /**
+     * Dodaje nową rezerwacje
+     * @param postDto
+     */
     @Override
-    public int dodajRezerwacje(RezerwacjaPostDto postDto) {
+    public void dodajRezerwacje(RezerwacjaPostDto postDto) {
 
         LocalDate start = postDto.getStartDate();
         LocalDate end = postDto.getEndDate();
@@ -81,15 +102,20 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
             throw new ZlaDataRezerwacjiException("Koncowa data nie moze byc wczesniej niz poczatkowa");
         }
 
+        //sprawdza czy w danym czasie jest mozliwa rezerwacja dla danego obiektu
         if (jestKolizja(start, end, postDto.getObiektId())) {
             throw new KolizjaRezerwacjiException("Rezerwacja w tym czasie nie jest możliwa");
         }
 
         rezerwacjaDao.save(mapToRezerwacja(postDto));
 
-        return 1;
     }
 
+    /**
+     * Zmienia dane istniejącej rezerwacji
+     * @param postDto dane rezerwacji do zmiany
+     * @param id rezerwacji
+     */
     @Override
     public void zmienRezerwacje(RezerwacjaPostDto postDto, int id) {
 
@@ -100,6 +126,7 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
             throw new ZlaDataRezerwacjiException("Koncowa data nie moze byc wczesniej niz poczatkowa");
         }
 
+        //sprawdza czy w danym czasie jest mozliwa rezerwacja dla danego obiektu z wyjatkiem nadpisywanej rezerwacji
         if (jestKolizjaDlaRezerwacji(start, end, postDto.getObiektId(), id)) {
             throw new KolizjaRezerwacjiException("Rezerwacja w tym czasie nie jest możliwa");
         }
@@ -111,24 +138,30 @@ public class RezerwacjaServiceImpl implements RezerwacjaService {
 
     }
 
+
     private boolean datyChronologicznie(LocalDate start, LocalDate end) {
         return start.isAfter(end);
     }
 
 
 
-    private boolean jestKolizja(LocalDate start, LocalDate end, int id) {
-        return rezerwacjaDao.czyJestKolizja(start, end, id);
+    private boolean jestKolizja(LocalDate start, LocalDate end, int obiektId) {
+        return rezerwacjaDao.czyJestKolizja(start, end, obiektId);
     }
 
-    private boolean jestKolizjaDlaRezerwacji(LocalDate start, LocalDate end, int obiektId, int id) {
-        return rezerwacjaDao.czyJestKolizjaDlaRezerwacji(start, end, obiektId, id);
+    private boolean jestKolizjaDlaRezerwacji(LocalDate start, LocalDate end, int obiektId, int rezerwacjaId) {
+        return rezerwacjaDao.czyJestKolizjaDlaRezerwacji(start, end, obiektId, rezerwacjaId);
     }
 
     private Rezerwacja mapToRezerwacja(RezerwacjaPostDto dto) {
-        Wynajmujacy wynajmujacy = wynajmujacyDao.getById(dto.getWynajmujacyId());
-        Najemca najemca = najemcaDao.getById(dto.getNajemcaId());
-        Obiekt obiekt = obiektDao.getById(dto.getObiektId());
+        Wynajmujacy wynajmujacy = wynajmujacyDao.findById(dto.getWynajmujacyId())
+                .orElseThrow(() -> new RuntimeException("Wynajmujacy o podanym id - "+ dto.getWynajmujacyId() +" nie istnieje"));
+
+        Najemca najemca = najemcaDao.findById(dto.getNajemcaId())
+                .orElseThrow(() -> new RuntimeException("Najemca o podanym id - "+ dto.getNajemcaId() +" nie istnieje"));
+        Obiekt obiekt = obiektDao.findById(dto.getObiektId())
+                .orElseThrow(() -> new RuntimeException("Obiekt o podanym id - "+ dto.getObiektId() +" nie istnieje"));
+
 
         LocalDate start = dto.getStartDate();
         LocalDate end = dto.getEndDate();

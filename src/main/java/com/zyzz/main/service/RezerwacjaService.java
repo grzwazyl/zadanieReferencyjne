@@ -13,7 +13,7 @@ public interface RezerwacjaService {
 
     List<RezerwacjaGetDto> listaRezerwacjiDlaObiektu(int obiekt);
 
-    int dodajRezerwacje(RezerwacjaPostDto rezerwacja);
+    void dodajRezerwacje(RezerwacjaPostDto rezerwacja);
 
     void zmienRezerwacje(RezerwacjaPostDto rezerwacja, int id);
 }

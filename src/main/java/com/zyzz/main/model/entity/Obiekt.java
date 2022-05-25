@@ -13,7 +13,7 @@ import java.util.List;
         property = "id")
 @Entity
 @Table(name = "obiekt")
-@Data
+@NoArgsConstructor @AllArgsConstructor @Getter @Setter @ToString
 public class Obiekt {
 
     @Id
@@ -26,7 +26,7 @@ public class Obiekt {
     private double cenaJednostkowa;
 
     @Column(name = "powierzchnia_m2", nullable = false)
-    private String powierzchnia;
+    private double powierzchnia;
 
     private String opis;
 

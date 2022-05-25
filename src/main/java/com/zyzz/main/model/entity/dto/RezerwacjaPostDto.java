@@ -1,12 +1,13 @@
 package com.zyzz.main.model.entity.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
+import lombok.*;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
-@Data
+
+@AllArgsConstructor @NoArgsConstructor @Getter @Setter @ToString
 public class RezerwacjaPostDto {
 
     @NotNull
